@@ -4,14 +4,21 @@ $(document).ready( function() {
 		$('.results').html('');
 		// get the value of the tags the user submitted
 		var tags = $(this).find("input[name='tags']").val();
+		//this corresponds to the .unasnwered-getter jquery object 
 		getUnanswered(tags);
+	});
+
+	$('.inspiration-getter').submit( function(event){
+		$('.results').html('');
+		var tag = $(this).find("input[name='answerers']").val();
+		$(this).find("input[name='answerers']").val('')
+		getAnswered(tag);
 	});
 });
 
 // this function takes the question object returned by StackOverflow 
 // and creates new result to be appended to DOM
 var showQuestion = function(question) {
-	
 	// clone our result template code
 	var result = $('.templates .question').clone();
 	
@@ -37,6 +44,26 @@ var showQuestion = function(question) {
 							'</p>' +
  							'<p>Reputation: ' + question.owner.reputation + '</p>'
 	);
+
+	return result;
+};
+
+function showAnswer(answer) {
+	console.log("user: " + answer.user.display_name);	
+	var result = $('.templates .answer').clone()
+	console.log(answer)
+
+	var answerElem = result.find(".user-name a");
+	answerElem.attr('href', answer.user.link);
+	answerElem.text(answer.user.display_name);
+
+	var score = result.find(".score");
+	console.log(score)
+	console.log("to string: " + answer.score.toString())
+	score.text(answer.score.toString())
+
+	var rep = result.find(".user-rep");
+	rep.text(answer.user.reputation.toString())
 
 	return result;
 };
@@ -71,8 +98,9 @@ var getUnanswered = function(tags) {
 		data: request,
 		dataType: "jsonp",
 		type: "GET",
-		})
+		}) 
 	.done(function(result){
+		// adds a handler to deferred objects that is only executed when resolved
 		var searchResults = showSearchResults(request.tagged, result.items.length);
 
 		$('.search-results').html(searchResults);
@@ -83,10 +111,39 @@ var getUnanswered = function(tags) {
 		});
 	})
 	.fail(function(jqXHR, error, errorThrown){
+		//called if the deferred object is rejected
 		var errorElem = showError(error);
 		$('.search-results').append(errorElem);
 	});
 };
 
+function getAnswered(searchTag) {
+	var request = {
+		tag: searchTag,
+		site: 'stackoverflow',
+		period: 'all_time'
+	}
+	var user_id_array = new Array();
 
+	var result = $.ajax({
+		url: "http://api.stackexchange.com//2.2/tags/" + request.tag + "/top-answerers/all_time?site=stackoverflow",
+		dataType: "jsonp",
+		type: "GET",
+	})
+	.done(function(result){
+		var searchResults = showSearchResults(request.tag, result.items.length)
+		$('.search-results').html(searchResults);
 
+		$.each(result.items, function(i , item) {
+			var user_id = item.user.user_id;
+			user_id_array.push(user_id);
+			//console.log(item)
+			//console.log(item.user.display_name)
+			var answer = showAnswer(item);
+			$('.results').append(answer);
+		});
+	}).fail(function(jqXHR, error, errorThrown){
+		var errorElem = showError(error);
+		$('.search-results').append(errorElem)
+	});
+};
