@@ -62,9 +62,6 @@ function showAnswer(answer) {
 	console.log("to string: " + answer.score.toString())
 	score.text(answer.score.toString())
 
-	var posts = result.find(".posts")
-	posts.text(answer.post_count)
-
 	var rep = result.find(".user-rep");
 	rep.text(answer.user.reputation.toString())
 
